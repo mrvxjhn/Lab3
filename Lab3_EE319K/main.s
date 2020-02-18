@@ -56,7 +56,38 @@ Start
  ; TExaS_Init sets bus clock at 80 MHz
      BL  TExaS_Init ; voltmeter, scope on PD3
  ; Initialization goes here 
-     LDR R0, = SYSCTL_RCGCGPIO_R ;intialize port E clock
+     LDR R0, =SYSCTL_RCGCGPIO_R
+	 LDRB R1, [R0]
+	 ORR R1, #0x20
+	 STRB R1, [R0]
+	 
+	 NOP
+	 NOP
+	 
+	 LDR R0, =GPIO_PORTF_LOCK_R
+	 LDR R1, =GPIO_LOCK_KEY
+	 STR R1, [R0]
+	 LDR R0, =GPIO_PORTF_CR_R
+	 LDR R1, [R0]
+	 ORR R1, #0xFF
+	 STR R1, [R0]
+	 
+	 LDR R0, =GPIO_PORTF_DIR_R
+	 LDR R1, [R0]
+	 AND R1, #0xFF
+	 STR R1, [R0]
+	 
+	 LDR R0, =GPIO_PORTF_DEN_R
+	 LDR R1, [R0]
+	 ORR R1, #0x10
+	 STR R1, [R0]
+	 
+	 LDR R0, =GPIO_PORTF_PUR_R
+	 LDR R1, [R0]
+	 ORR R1, #0x10
+	 STR R1, [R0]
+	 
+	 LDR R0, = SYSCTL_RCGCGPIO_R ;intialize port E clock
 	 LDR R1, [R0]
 	 ORR R1, #0x10
 	 STR R1, [R0]
@@ -79,7 +110,7 @@ Start
 	 ;these are some registers I used because I was too lazy to make variables
 	 
 	 LDR R5, = 3333333 ;The base length of a cycle	
-	 LDR R9, = 3000000 ;The max value we want to let a high run
+	 LDR R9, = 2999000 ;The max value we want to let a high run
 	 LDR R6, = 666666	;amount incrementing duration of high
 	 LDR R4, = 1000000  ;length of high in the beginning
 loop  
@@ -129,29 +160,30 @@ Delay2
 	 
 	 
 change
-	 CMP R4, R9	;check if R4 is already at 9M
+	 CMP R4, R9	;check if R4 is already at 3M
 	 BPL Zero
 	 ADD R4, R4, R6 ;R4+=2M
 
 loop2	 ;sits here till PE1 turned off
-	 LDR R0, = GPIO_PORTE_DATA_R
-	 LDR R1, [R0]
-	 LDR R2, [R0]	;sees if PE1 is turned on or off 
-	 BFC R2, #1,#1
-	 CMP R2, R1
-	 BMI loop2		;if CMP is negative that means PE1 is turned on, so then branch change the cycle
+	LDR R0, = GPIO_PORTE_DATA_R
+	LDR R1, [R0]
+	LDR R2, [R0]	;sees if PE1 is turned on or off 
+	BFC R2, #1,#1
+	CMP R2, R1
+	BMI loop2	;if CMP is negative that means PE1 is turned on, so then branch change the cycle
 	 B return
 	 
 Zero 
-	 LDR R4, =1000000	;3M
+	 LDR R4, =1000000	 ;3M
+	 ;B return
 	 
-loop3	 ;sits here till PE1 turned off
-	 LDR R0, = GPIO_PORTE_DATA_R
-	 LDR R1, [R0]
-	 LDR R2, [R0]	;sees if PE1 is turned on or off 
-	 BFC R2, #1,#1
-	 CMP R2, R1
-	 BMI loop3		;if CMP is negative that means PE1 is turned on, so then branch change the cycle
+loop3 ;its here till PE1 turned off
+	LDR R0, = GPIO_PORTE_DATA_R
+	LDR R1, [R0]
+	LDR R2, [R0]	;sees if PE1 is turned on or off 
+	BFC R2, #1,#1
+	CMP R2, R1
+	BMI loop3		;if CMP is negative that means PE1 is turned on, so then branch change the cycle
 
 	 
 	 B return
